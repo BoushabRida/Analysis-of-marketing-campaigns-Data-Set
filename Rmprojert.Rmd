@@ -1,0 +1,131 @@
+---
+title: 'ProjetR: Bank Marketing Data'
+author: "Rida Boushab"
+date: "16/01/2021"
+output:
+  html_document:
+    df_print: paged
+---
+![](www/UPPA.png)
+
+## Data Source
+
+●Le jeu de données url: https://www.kaggle.com/janiobachmann/bank-marketing-dataset <br>
+●17 attributs, 11162 lignes de données(rows) <br>
+●Le but de ce jeu de données est de predire si un client va souscrire à un dépôt à terme( deposit).
+
+```{r, echo=FALSE}
+knitr::opts_chunk$set(error = TRUE)
+```
+
+
+
+```{r}
+#reading the data
+bank <- read.csv("../bank.csv", header=T)
+#eliminate all null rows
+all.empty = rowSums(is.na(bank))==ncol(bank)
+bankData = bank[!all.empty,]
+head(bankData)
+```
+
+## Différentes caractéristiques de la data set 
+```{r}
+#give information about the data like (min, max, avg etc.)
+summary(bankData)
+```
+
+## La structuration de la data set
+```{r}
+str(bankData)
+```
+
+## La correlation 
+La correlation entre les variables du data set afin de voir les variables dominants
+```{r}
+library(corrplot)
+corrdata<-data.frame(bankData[, lapply(bankData, is.numeric) == TRUE])
+cory<-cor(corrdata)
+corrplot(cory)
+```
+
+## Analyse d'âge
+Le jeu de données est composé des personnes principalement entre 32 et 49 ans <br>
+L'âge maximum est de 95 ans et le minimum est de 18 ans
+
+```{r}
+boxplot(bankData$age, col="#375A7F",xaxt="n",
+              xlab="Age Distribution", horizontal=TRUE)
+axis(side=1, at=fivenum(bankData$age), labels=TRUE,las=2)
+text(fivenum(bankData$age),rep(1.2,5),srt=90,adj=0,
+labels=c("Min","Lower","Median","Upper","max"))
+```
+
+
+
+## Analyse du balance et job
+Ce nuage de points montre la distribution du balance pour chaque job
+
+```{r}
+library(ggplot2)
+ggplot(bankData ,aes(x=balance ,y= job))+geom_point( color ="#375A7F")
+```
+
+## Analyse du marital
+On remarque que les clients mariée qui domine le jeu de données
+```{r}
+ggplot (bankData ,aes (x=marital)) + geom_bar(fill="#375A7F")
+```
+
+## Analyse de type d'education 
+On remarque que les clients de niveau "Secondary" qui domine <br>
+```{r}
+ggplot (bankData ,aes (x=education)) + geom_bar(fill="#375A7F") 
+```
+
+## Analyse depot et l'age 
+Ce Histogramme montre les client de moins 60ans qui ont souscrit un dépôt à terme, suivant une distribution normale<br>
+```{r}
+library(tidyverse)
+deposit_filter <- filter(bankData, bankData$deposit == "yes")
+deposit_below_60<- filter(deposit_filter, deposit_filter$age <= 60)
+mean<-mean(deposit_below_60$age)
+sd<-sd(deposit_below_60$age)
+hist(deposit_below_60$age, prob=TRUE, col="#375A7F",main="Histogram of clents who deposit under 60 years")
+abline(v = mean, col = "#df9995", lwd = 2)
+```
+
+
+## Test
+Le solde(balance) a-t-il un effet sur le dépôt(deposit) à terme?  <br>
+H0: le solde n'a aucun effet sur le dépôt à terme <br>
+H1: le solde a un effet sur le dépôt à terme <br>
+
+
+```{r}
+with(data=bankData,t.test(balance[deposit=="no"],balance[deposit=="yes"],var.equal=TRUE))
+```
+La p-valeur est largement inférieure à 5%. Donc, on rejette l'hypothèse nulle.
+
+## Prédiction
+Le modèle de prediction utilisé c'est une arbre de decision, on veut predire si un client va souscrire ou non à un dépôt à terme( deposit), en prenant 16 variables du jeu de donnees(sauf la variable deposit, c'est elle quand veut predire), pour les variables de type qualitatif on va les encoder afin de les utiliser dans l'arbre de decision.
+![](www/Code1.png)
+![](www/Code2.png)
+la librarie "library(rpart.plot)" permet de genérer la règle de decision pour les variables intréssant.
+![](www/Rplot02.png)
+
+## Conclusion
+
+Les personnes dont l'âge entre 30 et 40 ans doivent être ciblées pour la campagne de marketing parceque
+ce groupe d'âge déposent le plus.
+
+
+
+
+
+
+
+
+
+
+
